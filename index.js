@@ -1,30 +1,18 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+
+mongoose.connect('mongodb+srv://deepak:test@123@cluster0.8ounu.mongodb.net/deepak?retryWrites=true&w=majority',{useNewUrlParser: true, useUnifiedTopology: true});
+require('./models/User');
 
 
 const app = express();
+app.use(bodyParser.json());
+
+require('./routes/userRoutes')(app);
 
 
 
-
-app.get('/api/employees',(req,res)=>{
-
-    res.status(200).send(tempJson.employees)
-
-})
-
-app.get('/api/surveys',(req,res)=>{
-    
-    res.status(200).send(tempJson.surveys);
-
-})
-
-
-app.post('/api/updateEmployee',(req,res)=>{
-
-    console.log("data received",req.body);
-    res.status(200).send({status:1,message: 'Successfully updated employee'});
-
-})
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
