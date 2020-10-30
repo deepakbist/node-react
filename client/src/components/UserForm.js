@@ -1,113 +1,146 @@
-import React, { Component } from 'react'
+import React from 'react'
 import '../App.css'
+import axios from 'axios';
 
 
-
-class Form extends Component {
-    constructor(props) {
-        super(props)
-
-        this.state = {
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-
-
-        }
-        this.handleSubmit = this.handleSubmit.bind(this)
-    }
-
-    firsthandler = (event) => {
-        this.setState({
-            firstName: event.target.value
-        })
-    }
-    lasthandler = (event) => {
-        this.setState({
-            lastName: event.target.value
-        })
-    }
-    emailhandler = (event) => {
-        this.setState({
-            email: event.target.value
-        })
-    }
-
-    phonehandler = (event) => {
-        this.setState({
-            phone: event.target.value
-        })
-    }
-
-    handleSubmit = (event) => {
-        event.preventDefault()
-
-        const { firstName, lastName, phone, email } = this.state;
-        let error;
-        if (!firstName) {
-            error = 'Please enter first name';
-        } else if (!lastName) {
-            error = 'Please enter last name';
-        } else if (!phone) {
-            error = 'Please enter phone';
-        } else if (!email) {
-            error = 'Please enter email';
-        }
-        if (error) {
-            alert('Error :: ' + error);
-            return;
-        }
-        const reqData = {
-            firstName,
-            lastName,
-            phone,
-            email
-        }
-        console.log('req data',reqData)
-
-
-        fetch('/api/user/register', {
-            method: 'POST',
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
-            },
-            body: JSON.stringify(reqData)
-        }).then(res => res.json()).then(json => {
-            console.log('res---', json);
-        })
-
-
-        // this.setState({
-        //     firstName: "",
-        //     lastName: "",
-        //     email: "",
-        //     phone: "",
-        // })
-
-    }
-
-
-
-
+class ReactFormLabel extends React.Component {
     render() {
         return (
-            <div>
-
-                <form onSubmit={this.handleSubmit}>
-                    <h1>User Registration</h1>
-                    <label>First Name :</label> <input type="text" value={this.state.firstName} onChange={this.firsthandler} placeholder="FirstName..." /><br />
-                    <label>Last Name :</label> <input type="text" value={this.state.lastName} onChange={this.lasthandler} placeholder="LastName..." /><br />
-                    <label>Email Id :</label> <input type="text" value={this.state.email} onChange={this.emailhandler} placeholder="Email..." /><br />
-                    <label>Phone Number :</label><input type="number" onChange={this.phonehandler} placeholder="Phone..." />
-                    <br />
-                    <input type="submit" value="Submit" />
-                </form>
-
-            </div>
-
+            <label htmlFor={this.props.htmlFor}>{this.props.title}</label>
         )
     }
 }
 
-export default Form
+class ReactForm extends React.Component {
+    constructor(props) {
+        super(props)
+
+        this.state = {
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            imageLoading: false,
+            imageUrl: ''
+        }
+
+        this.handleChange = this.handleChange.bind(this)
+        this.handleSubmit = this.handleSubmit.bind(this)
+    }
+
+    handleChange = (e) => {
+        let newState = {}
+
+        newState[e.target.name] = e.target.value
+
+        this.setState(newState)
+    }
+
+    onimageUploadHandler = (e) => {
+        const data = new FormData();
+        data.append('file', e.target.files[0]);
+        this.setState({ imageLoading: true });
+        axios.post("/uploadImage", data)
+            .then(res => {
+                console.log(res.statusText)
+                console.log(res.data);
+                this.setState({ imageLoading: false, imageUrl: res.data.filename })
+            }).catch(err => {
+                console.log('error in uploading', err);
+                this.setState({ imageLoading: false })
+            })
+
+    }
+
+
+    handleSubmit = (e, message) => {
+        e.preventDefault()
+        const { firstName, lastName, phone, email, imageUrl } = this.state;
+
+
+        let formData = {
+            firstName,
+            lastName,
+            phone,
+            email,
+            image: imageUrl
+        }
+
+        if (formData.firstName.length < 1 || formData.lastName.length < 1 || formData.phone.length < 1 || formData.email.length < 1) {
+            return false
+        }
+
+        if (!imageUrl) {
+            alert('Image not uploaded. Please upload image first');
+            return false;
+        }
+
+        axios.post('/api/user/register', formData).then(res => {
+            this.setState({ imageLoading: false, imageUrl: res.data.filename });
+            alert('Successfully submitted user details');
+            this.setState({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                imageUrl: ''
+            })
+        }).catch(err=>{
+            console.log('err in form submission',err);
+            alert('Error in form submission',err);
+        })
+
+
+        this.setState({
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: ''
+        })
+    }
+
+    render() {
+        return (
+            <form className='react-form' onSubmit={this.handleSubmit}>
+                <h1>User Registration</h1>
+
+                <fieldset className='form-group'>
+                    <ReactFormLabel htmlFor='formName' title='First Name:' />
+
+                    <input id='formName' className='form-input' name='firstName' type='text' required onChange={this.handleChange} value={this.state.firstName} />
+                </fieldset>
+
+                <fieldset className='form-group'>
+                    <ReactFormLabel htmlFor='formName' title='Last Name:' />
+
+                    <input id='formName' className='form-input' name='lastName' type='text' required onChange={this.handleChange} value={this.state.lastName} />
+                </fieldset>
+
+                <fieldset className='form-group'>
+                    <ReactFormLabel htmlFor='formEmail' title='Email:' />
+
+                    <input id='formEmail' className='form-input' name='email' type='email' required onChange={this.handleChange} value={this.state.email} />
+                </fieldset>
+
+                <fieldset className='form-group'>
+                    <ReactFormLabel htmlFor='formSubject' title='Phone number:' />
+
+                    <input id='formPhone' className='form-input' name='phone' type='tel' required onChange={this.handleChange} value={this.state.phone} />
+                </fieldset>
+
+                <fieldset className='form-group'>
+                    <ReactFormLabel htmlFor='formSubject' title='Image:' />
+
+                    <input id='formEmail' className='form-input' name='image' type='file' accept="image/*" required onChange={this.onimageUploadHandler} />
+                </fieldset>
+
+
+                <div className='form-group'>
+                    <input id='formButton' className='btn' type='submit' placeholder='Submit' disabled={this.state.imageLoading} />
+                </div>
+            </form>
+        )
+    }
+}
+
+export default ReactForm;
